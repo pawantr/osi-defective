@@ -1,0 +1,49 @@
+# LLM backends: two cost-efficient models per vendor ("balanced" first, then "fast").
+# Pick with --provider/--model or $DEFECTIVE_PROVIDER / $DEFECTIVE_MODEL
+# (model may be the alias "balanced"/"fast" or a literal model id).
+#
+# Personal keys come from the environment, never from this file:
+#   anthropic -> ANTHROPIC_API_KEY   openai -> OPENAI_API_KEY   gemini -> GEMINI_API_KEY
+# argo (ANL network only) authenticates with ANL_USERNAME.
+default_provider: anthropic
+
+providers:
+  anthropic:
+    wire: anthropic
+    base_url: https://api.anthropic.com   # explicit, so a shell ANTHROPIC_BASE_URL can't reroute the key
+    key_env: ANTHROPIC_API_KEY
+    max_tokens: 64000
+    models:
+      balanced: {id: claude-sonnet-5-5, effort: medium, fallbacks: true}
+      fast:     {id: claude-haiku-5-5,  effort: low}
+
+  openai:
+    wire: openai
+    base_url: https://api.openai.com/v1
+    key_env: OPENAI_API_KEY
+    max_completion_tokens: 16000
+    models:                       # verify ids against your account's /v1/models
+      balanced: {id: gpt-5.6-terra}
+      fast:     {id: gpt-5.6-luna}
+
+  gemini:
+    wire: gemini
+    key_env: GEMINI_API_KEY
+    models:
+      balanced: {id: gemini-3.5-flash}
+      fast:     {id: gemini-3.1-flash-lite}
+
+  argo:
+    # Argo native endpoints (model ids checked 2026-10-21 via /v1/models).
+    # Claude goes over /v1/messages because Argo's Claude path requires
+    # streaming; GPT and Gemini go over the OpenAI-compatible endpoint.
+    key_env: ANL_USERNAME
+    max_tokens: 32000
+    max_completion_tokens: 16000
+    models:
+      balanced:        {id: Claude Sonnet 5,       wire: anthropic, base_url: https://apps.inside.anl.gov/argoapi}
+      fast:            {id: Claude Haiku 4.5,      wire: anthropic, base_url: https://apps.inside.anl.gov/argoapi}
+      gpt-balanced:    {id: GPT-5.6 Terra,         wire: openai, base_url: https://apps.inside.anl.gov/argoapi/v1}
+      gpt-fast:        {id: GPT-5.6 Luna,          wire: openai, base_url: https://apps.inside.anl.gov/argoapi/v1}
+      gemini-balanced: {id: Gemini 3.5 Flash,      wire: openai, base_url: https://apps.inside.anl.gov/argoapi/v1}
+      gemini-fast:     {id: Gemini 3.1 Flash Lite, wire: openai, base_url: https://apps.inside.anl.gov/argoapi/v1}

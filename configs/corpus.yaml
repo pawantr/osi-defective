@@ -1,0 +1,15 @@
+# Paper corpus layout. Papers stay on Box (copyright) — only extracted,
+# source-linked records are committed under data/.
+#
+# root is resolved from $DEFECTIVE_CORPUS_DIR (see .env.example).
+# Globs are relative to root and matched against the Docling markdown files.
+splits:
+  dft: ["DFT Analysis/*.md"]          # knowledge base of DFT defect levels
+  dev: ["Experimental Data/*.md"]     # tune extraction prompts + matcher
+  heldout: ["Test Data/*.md"]         # untouched until final evaluation
+  ignore: ["Old Papers about Scientific AI/*.md"]
+
+# A held-out paper is blocked everywhere, including duplicate copies filed
+# under another split (e.g. the Pavlovic 2008 TSC paper is in both
+# Experimental Data/ and Test Data/). Matching is on the normalized title stem.
+heldout_guard: true

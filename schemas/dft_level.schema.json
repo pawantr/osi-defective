@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DFT charge-transition level record",
+  "description": "One computed transition level from one DFT paper or calculation. Draft for Akhil to revise.",
+  "type": "object",
+  "required": ["record_id", "material", "defect", "transition", "level_eV", "level_reference", "source"],
+  "properties": {
+    "record_id": {"type": "string"},
+    "material": {"type": "string"},
+    "defect": {"type": "string", "description": "e.g. V_Br, Pb_i, Te_Cd, V_Cd"},
+    "transition": {"type": "string", "description": "e.g. '(+/0)', '(0/-)', '(2-/-)'"},
+    "level_eV": {"type": "number"},
+    "level_reference": {"enum": ["Ec", "Ev"]},
+    "defect_class": {"enum": ["vacancy", "interstitial", "antisite", "substitutional", "complex", "extended"]},
+    "sublattice": {"type": ["string", "null"], "description": "Element site involved, e.g. Br, Cd, Te"},
+    "character": {"enum": ["donor", "acceptor", "amphoteric", "unknown"]},
+    "favored_condition": {"type": ["string", "null"], "description": "Chemical-potential regime with lowest formation energy, e.g. Te-rich"},
+    "method": {
+      "type": "object",
+      "properties": {
+        "functional": {"type": ["string", "null"], "description": "PBE, HSE06(alpha=..), SCAN, ..."},
+        "soc": {"type": ["boolean", "null"]},
+        "correction": {"type": ["string", "null"], "description": "FNV, Makov-Payne, none, ..."},
+        "supercell_atoms": {"type": ["integer", "null"]},
+        "band_gap_eV": {"type": ["number", "null"], "description": "Gap of the calculation (for rescaling)"}
+      }
+    },
+    "uncertainty_eV": {"type": ["number", "null"], "description": "Harmonized per-method width"},
+    "source": {
+      "type": "object",
+      "required": ["doc_id", "quote"],
+      "properties": {
+        "doc_id": {"type": "string"},
+        "doi": {"type": ["string", "null"]},
+        "location": {"type": ["string", "null"]},
+        "quote": {"type": "string"}
+      }
+    }
+  }
+}

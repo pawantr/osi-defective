@@ -1,0 +1,24 @@
+# Candidate discriminating experiments for the design agent.
+#
+# Each experiment separates candidates by one field of the DFT record
+# (schemas/dft_level.schema.json). The design agent scores an experiment by the
+# expected information gain over the current posterior: candidates that share a
+# value of `discriminates_on` cannot be told apart by it.
+# No defect-specific predictions live here; outcomes come from the records.
+experiments:
+  stoichiometry_anneal:
+    description: Anneal matched samples under each component's overpressure (e.g. Cd vs Te, or Br-rich vs Br-poor) and re-measure the trap.
+    discriminates_on: favored_condition
+    cost: medium
+  carrier_selective_measurement:
+    description: Separate electron vs hole traps (e.g. DLTS on n/p-type contacts, TSC with selective injection, PICTS polarity).
+    discriminates_on: character
+    cost: low
+  intentional_doping_series:
+    description: Compare nominally undoped and intentionally doped/compensated crystals of the same growth.
+    discriminates_on: defect_class
+    cost: high
+  sublattice_specific_probe:
+    description: Probe the site directly (positron annihilation for vacancies, EPR/ODMR, isotope-resolved techniques).
+    discriminates_on: sublattice
+    cost: high

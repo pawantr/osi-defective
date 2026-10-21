@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+# Papers are copyrighted: keep PDFs/markdown on Box, commit only extracted records.
+*.pdf
+corpus/
+runs/

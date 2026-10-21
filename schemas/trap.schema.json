@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Experimental trap record",
+  "description": "One reported deep level from one experimental paper. Draft for Mustafa to revise.",
+  "type": "object",
+  "required": ["record_id", "material", "energy_eV", "energy_reference", "technique", "source"],
+  "properties": {
+    "record_id": {"type": "string"},
+    "material": {"type": "string", "description": "e.g. CsPbBr3, Cd0.9Zn0.1Te, CdZnTeSe"},
+    "label": {"type": "string", "description": "Authors' trap label, e.g. 'T4', 'E3', 'TeSP'"},
+    "energy_eV": {"type": "number"},
+    "energy_err_eV": {"type": ["number", "null"]},
+    "energy_reference": {"enum": ["Ec", "Ev", "unspecified"], "description": "Edge the energy is measured from"},
+    "carrier": {"enum": ["electron", "hole", "unknown"]},
+    "cross_section_cm2": {"type": ["number", "null"]},
+    "concentration_cm3": {"type": ["number", "null"]},
+    "technique": {"type": "string", "description": "TSC, I-DLTS, PICTS, TEES, PL, ..."},
+    "analysis_method": {"type": ["string", "null"], "description": "SIMPA, Arrhenius, initial rise, ..."},
+    "growth": {
+      "type": "object",
+      "properties": {
+        "method": {"type": ["string", "null"], "description": "Bridgman, THM, solution, ..."},
+        "dopants": {"type": "array", "items": {"type": "string"}},
+        "stoichiometry": {"type": ["string", "null"], "description": "e.g. Te-rich, Cd-rich, Br-poor"},
+        "anneal": {"type": ["string", "null"]},
+        "irradiation": {"type": ["string", "null"]}
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "description": "Hidden from the agent for held-out records.",
+      "properties": {
+        "defect": {"type": ["string", "null"], "description": "e.g. V_Cd(2-/-), Te_Cd, V_Br"},
+        "basis": {"enum": ["independent", "dft_cited", "literature_cited", "none"],
+                   "description": "independent = doping/stoichiometry/anneal evidence in this paper"},
+        "evidence": {"type": ["string", "null"]}
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["doc_id", "quote"],
+      "properties": {
+        "doc_id": {"type": "string"},
+        "doi": {"type": ["string", "null"]},
+        "location": {"type": ["string", "null"], "description": "Table/figure/paragraph"},
+        "quote": {"type": "string", "description": "Verbatim text the numbers came from"}
+      }
+    }
+  }
+}
