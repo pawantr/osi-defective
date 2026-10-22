@@ -14,7 +14,7 @@ load_dotenv(ROOT / ".env")
 CORPUS = os.environ.get("DEFECTIVE_CORPUS_DIR", "")
 
 
-@pytest.mark.skipif(not Path(CORPUS).expanduser().is_dir(), reason="local corpus not available")
+@pytest.mark.skipif(not CORPUS or not Path(CORPUS).expanduser().is_dir(), reason="local corpus not available")
 def test_seed_quotes_verbatim():
     spec = importlib.util.spec_from_file_location("v", ROOT / "scripts/verify_seed_quotes.py")
     v = importlib.util.module_from_spec(spec)

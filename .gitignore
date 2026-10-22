@@ -7,3 +7,5 @@ __pycache__/
 *.pdf
 corpus/
 runs/
+# Our own figures are fine to commit (papers never live under benchmarks/)
+!benchmarks/**/*.pdf
