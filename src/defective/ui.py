@@ -209,7 +209,11 @@ def build_ui(provider: str | None = None, model: str | None = None) -> gr.Blocks
                 mod.input(rebuild, [prov, mod], outs)
                 clear.click(rebuild, [prov, mod], outs)
                 demo.load(rebuild, [prov, mod], outs)
-                box.submit(respond, [box, chat, trace, agent], [chat, trace, box])
+                # Clear the box first and stream into chat/trace only, so the textbox is never
+                # an output of the long-running stream (Gradio locks outputs while they stream).
+                pending_q = gr.State("")
+                box.submit(lambda t: ("", t), box, [box, pending_q], queue=False).then(
+                    respond, [pending_q, chat, trace, agent], [chat, trace, pending_q])
 
             with gr.Tab("Match a trap", id="match"):
                 gr.Markdown("Direct probabilistic matcher over the DFT table; no LLM involved.")
