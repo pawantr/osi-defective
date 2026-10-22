@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable
 
-from . import matcher
+from . import matcher, peaks
 from .corpus import Corpus
 from .providers import Tool
 
@@ -84,3 +84,19 @@ class Toolbox:
             z = sum(x["posterior"] for x in cands) or 1.0
             cands = [{**x, "posterior": x["posterior"] / z} for x in cands]
             return {"top_candidates": cands, "experiments": matcher.propose_experiments(cands, levels)}
+
+        @self.tool("fit_trap_curve",
+                   "Fit a digitized 2-column CSV to trap energies. TSC: (T [K], current) curve, deconvolved into "
+                   "first-order peaks (N by BIC) -> Ea, Tm, s per peak. DLTS/I-DLTS/PICTS: Arrhenius pairs "
+                   "(T or Tm, emission rate / rate window) -> Ea, sigma. Feed Ea into match_trap.",
+                   {"csv_path": {"type": "string"},
+                    "technique": {"type": "string", "enum": ["TSC", "DLTS", "I-DLTS", "PICTS"]},
+                    "heating_rate_K_per_s": {"type": "number"}, "max_peaks": {"type": "integer"},
+                    "m_eff": {"type": "number", "description": "m*/m0, for capture cross-section"},
+                    "x_kind": {"type": "string", "enum": ["T", "1000/T", "1/T"]},
+                    "y_kind": {"type": "string", "enum": ["rate", "tau", "ln(e/T^2)", "ln(tau*T^2)"]}},
+                   ["csv_path", "technique"])
+        def fit_trap_curve(csv_path: str, technique: str, heating_rate_K_per_s: float | None = None,
+                           max_peaks: int = 4, m_eff: float | None = None, x_kind: str = "T",
+                           y_kind: str = "rate"):
+            return peaks.fit_curve(csv_path, technique, heating_rate_K_per_s, max_peaks, m_eff, x_kind, y_kind)

@@ -10,9 +10,12 @@ requires-python = ">=3.15"
 dependencies = [
     "anthropic>=2.1.0",
     "google-genai>=2.32.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
     "openai>=3.36.0",
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
+    "scipy>=1.18.1",
 ]
 
 [project.optional-dependencies]
