@@ -14,12 +14,12 @@ from . import matcher, peaks, report
 from .providers import load_model_config
 
 PROVIDERS = ["anthropic", "openai", "gemini", "argo"]
-MATERIALS = ["CsPbBr3", "CdZnTe"]
+MATERIALS = ["CsPbBr3", "CdZnTe", "CdTe"]
 CAND_COLS = ["rank", "defect", "transition", "level_eV", "reference", "delta_eV", "sigma_eV", "posterior", "source"]
 PEAK_COLS = ["peak", "energy_eV", "energy_sigma_eV", "peak_T_K", "frequency_factor_per_s",
              "apparent_cross_section_cm2", "order_b", "flags"]
 EXAMPLE_CURVE = os.path.join(os.path.dirname(__file__), "..", "..", "data", "examples", "tsc_synthetic_two_peaks.csv")
-EXP_COLS = ["experiment", "expected_info_gain_bits", "cost", "discriminates_on", "outcome_groups", "description"]
+EXP_COLS = ["experiment", "info_gain_bits", "cost", "discriminates_on", "outcome_groups", "description"]
 EXAMPLES = ["Which defect explains the 0.79 eV trap in CdZnTe?",
             "A TSC trap at Ec-0.45 eV (±0.03) in CsPbBr3: rank candidates and propose the next experiment."]
 _corpus = None
@@ -85,8 +85,13 @@ def respond(text: str, history: list, trace: list, agent):
             return
 
 
+def _show(v):
+    """4 significant figures for display; the tools/JSON keep full precision."""
+    return float(f"{v:.4g}") if isinstance(v, float) else v
+
+
 def _frame(rows: list[dict], cols: list[str]) -> pd.DataFrame:
-    return pd.DataFrame([{c: r.get(c) for c in cols} for r in rows], columns=cols)
+    return pd.DataFrame([{c: _show(r.get(c)) for c in cols} for r in rows], columns=cols)
 
 
 def match_table(material: str, energy_eV: float | None, reference: str, error: float | None, top_k: int = 5):
@@ -111,12 +116,13 @@ def match_table(material: str, energy_eV: float | None, reference: str, error: f
     top = [{**c, "posterior": c["posterior"] / z} for c in top]
     exps = matcher.propose_experiments(top, levels)
     for e in exps:
+        e["info_gain_bits"] = e["expected_info_gain_bits"]
         e["outcome_groups"] = "; ".join(f"{k}: {', '.join(v)}" for k, v in e["outcome_groups"].items())
     ranked = [{**c, "rank": i + 1} for i, c in enumerate(cands)]
     skipped = res["skipped_no_common_reference"]
     msg = (f"{len(cands)} candidates from {len(levels)} DFT levels for {material} "
-           f"(trap {energy_eV} eV vs {reference}). Experiments ranked over the top {len(top)} "
-           f"(posterior entropy {exps[0]['posterior_entropy_bits'] if exps else 0} bits). {res['note']}"
+           f"(trap {energy_eV:.3f} eV vs {reference}). Experiments ranked over the top {len(top)} "
+           f"(posterior entropy {abs(exps[0]['posterior_entropy_bits']) if exps else 0:.2f} bits). {res['note']}"
            + (f" Skipped (no common reference): {', '.join(skipped)}." if skipped else ""))
     return msg, _frame(ranked, CAND_COLS), _frame(exps, EXP_COLS)
 
@@ -152,7 +158,7 @@ def fit_table(path: str | None, technique: str, beta: float | None, x_kind: str,
         f = res.get("fit", {})
         msg = (f"{len(traps)} {f.get('peak_model', 'Kitis')} peak(s), "
                f"rms log10 residual = {f.get('rms_log10_residual', float('nan')):.4f}.")
-        ea = traps[0]["energy_eV"] if traps else None
+        ea = round(traps[0]["energy_eV"], 3) if traps else None
     else:
         T, e = peaks.to_rate(x, y, x_kind, y_kind)
         rows = [{**p, "peak": i + 1, "flags": ", ".join(p.get("flags", []))} for i, p in enumerate(traps)]
@@ -165,7 +171,7 @@ def fit_table(path: str | None, technique: str, beta: float | None, x_kind: str,
         ax.set(xlabel="1000/T (1/K)", ylabel="ln(e/T²)")
         msg = (f"Arrhenius fit: Ea = {trap.get('energy_eV', float('nan')):.3f} eV "
                f"over {trap.get('n_windows', len(T))} points." if trap else "No trap resolved.")
-        ea = trap.get("energy_eV")
+        ea = round(trap["energy_eV"], 3) if "energy_eV" in trap else None
     ax.legend(fontsize=8, frameon=False)
     fig.tight_layout()
     msg += " Energies have no band-edge reference until you choose one."
@@ -173,7 +179,7 @@ def fit_table(path: str | None, technique: str, beta: float | None, x_kind: str,
 
 
 def _row_energy(evt: gr.SelectData):
-    return evt.row_value[PEAK_COLS.index("energy_eV")]
+    return round(float(evt.row_value[PEAK_COLS.index("energy_eV")]), 3)
 
 
 def export_report(material: str, technique: str, peaks_df, reference: str, error: float | None, top_k: int = 5):
@@ -203,6 +209,8 @@ def build_ui(provider: str | None = None, model: str | None = None) -> gr.Blocks
     models = models_for(provider)
     model = model or os.environ.get("DEFECTIVE_MODEL") or models[0]
     materials = MATERIALS
+    # Demo default: CsPbBr3 has three competing levels near Ec, so the posterior and experiment ranking are non-trivial.
+    default_mat = "CsPbBr3"
 
     with gr.Blocks(title="DEFECTIVE") as demo:
         gr.Markdown("# DEFECTIVE\nAssign measured deep-level traps to candidate defects, with evidence "
@@ -238,14 +246,18 @@ def build_ui(provider: str | None = None, model: str | None = None) -> gr.Blocks
                 mod.input(rebuild, [prov, mod], outs)
                 clear.click(rebuild, [prov, mod], outs)
                 demo.load(rebuild, [prov, mod], outs)
-                box.submit(respond, [box, chat, trace, agent], [chat, trace, box])
+                # Clear the box first and stream into chat/trace only, so the textbox is never
+                # an output of the long-running stream (Gradio locks outputs while they stream).
+                pending_q = gr.State("")
+                box.submit(lambda t: ("", t), box, [box, pending_q], queue=False).then(
+                    respond, [pending_q, chat, trace, agent], [chat, trace, pending_q])
 
             with gr.Tab("Match a trap", id="match"):
                 gr.Markdown("Direct probabilistic matcher over the DFT table; no LLM involved.")
                 with gr.Row():
-                    mat = gr.Dropdown(materials, value=materials[0], label="Material (composition)")
-                    en = gr.Number(0.79, label="energy_eV", step=0.01)
-                    ref = gr.Radio(["Ec", "Ev", "unspecified"], value="unspecified", label="Reference")
+                    mat = gr.Dropdown(materials, value=default_mat, label="Material (composition)", allow_custom_value=True)
+                    en = gr.Number(0.60, label="energy_eV", step=0.01)
+                    ref = gr.Radio(["Ec", "Ev", "unspecified"], value="Ec", label="Reference")
                     err = gr.Number(matcher.DEFAULT_SIGMA_EXP_EV, label="error (eV)", step=0.01, minimum=0)
                 go = gr.Button("Match", variant="primary")
                 msg = gr.Markdown()
@@ -263,7 +275,7 @@ def build_ui(provider: str | None = None, model: str | None = None) -> gr.Blocks
                     csv = gr.File(label="CSV (2 columns)", file_types=[".csv", ".txt", ".dat"], type="filepath",
                                   value=EXAMPLE_CURVE if os.path.exists(EXAMPLE_CURVE) else None)
                     with gr.Column():
-                        fmat = gr.Dropdown(materials, value=materials[0], label="Material (composition)")
+                        fmat = gr.Dropdown(materials, value=default_mat, label="Material (composition)", allow_custom_value=True)
                         tech = gr.Radio(["TSC", "DLTS", "I-DLTS", "PICTS", "LAPLACE_DLTS"], value="TSC",
                                         label="Measurement technique")
                 with gr.Accordion("Advanced (axis conventions / heating rate)", open=False):

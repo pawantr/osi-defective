@@ -28,7 +28,8 @@ mcp = [
 ]
 dft = [
     "ase>=3.26",
-    "mace-torch",
+    # torch (needed by mace-torch) has no Python 3.15 wheels yet; on 3.15 the MACE tool reports mace_unavailable.
+    "mace-torch; python_version < '3.15'",
 ]
 
 [build-system]

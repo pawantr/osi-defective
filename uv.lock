@@ -57,6 +57,21 @@ wheels = [
 ]
 
 [[package]]
+name = "ase"
+version = "3.29.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/aa/36/cfe17324ea701d2caa479f25b134c54aeb36998443fd88c13e4f1af06f52/ase-3.29.0.tar.gz", hash = "sha256:ef4e2caa38169e3fbbc4164764a060d1877a6692519a4bed82521328eeb0d9aa", size = 2466051, upload-time = "2026-06-21T16:03:06.499Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/a6/a3d29378618d3d9ba0962473f8bbf09a5ad15eb8b210c5153fb88d0b8aad/ase-3.29.0-py3-none-any.whl", hash = "sha256:7b9dd103f007810339c24acfee2f6b677c0c48443b21d3c98e52959246cf4ebf", size = 3014724, upload-time = "2026-06-21T16:03:03.794Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -317,12 +332,16 @@ dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "openai" },
+    { name = "pandas" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "scipy" },
 ]
 
 [package.optional-dependencies]
+dft = [
+    { name = "ase" },
+]
 mcp = [
     { name = "mcp" },
 ]
@@ -338,17 +357,20 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = ">=2.1.0" },
+    { name = "ase", marker = "extra == 'dft'", specifier = ">=3.26" },
     { name = "google-genai", specifier = ">=2.32.0" },
     { name = "gradio", marker = "extra == 'ui'", specifier = ">=6.30.0" },
+    { name = "mace-torch", marker = "python_full_version < '3.15' and extra == 'dft'" },
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3.0" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "openai", specifier = ">=3.36.0" },
+    { name = "pandas", specifier = ">=2.2" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "scipy", specifier = ">=1.18.1" },
 ]
-provides-extras = ["ui", "mcp"]
+provides-extras = ["ui", "mcp", "dft"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]
