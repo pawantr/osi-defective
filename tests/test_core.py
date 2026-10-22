@@ -17,7 +17,7 @@ def corpus(tmp_path):
         "Experimental Data/Deep levels in CZT.md": "# Deep levels in CZT\n\nA trap at Ec-0.79 eV from TSC.",
         "Experimental Data/Identification of deep trap levels from.md": "# Pavlovic\n\nEL2-like 0.99 eV donor.",
         "Test Data/Identification of deep trap levels from (2).md": "# Pavlovic\n\nheld out copy",
-        "DFT Analysis/Vacancies in CsPbBr3.md": "# DFT\n\nV_Br (+/0) level.",
+        "DFT Papers/Vacancies in CsPbBr3.md": "# DFT\n\nV_Br (+/0) level.",
     }.items():
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel).write_text(body)

@@ -4,7 +4,7 @@
 # root is resolved from $DEFECTIVE_CORPUS_DIR (see .env.example).
 # Globs are relative to root and matched against the Docling markdown files.
 splits:
-  dft: ["DFT Analysis/*.md"]          # knowledge base of DFT defect levels
+  dft: ["DFT Papers/*.md"]            # knowledge base of DFT defect levels
   dev: ["Experimental Data/*.md"]     # tune extraction prompts + matcher
   heldout: ["Test Data/*.md"]         # untouched until final evaluation
   ignore: ["Old Papers about Scientific AI/*.md"]

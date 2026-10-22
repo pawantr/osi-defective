@@ -13,6 +13,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
     "openai>=3.36.0",
+    "pandas>=2.2",
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
     "scipy>=1.18.1",
@@ -24,6 +25,10 @@ ui = [
 ]
 mcp = [
     "mcp>=2.3.0",
+]
+dft = [
+    "ase>=3.26",
+    "mace-torch",
 ]
 
 [build-system]

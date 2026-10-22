@@ -86,11 +86,14 @@ class Toolbox:
             return {"top_candidates": cands, "experiments": matcher.propose_experiments(cands, levels)}
 
         @self.tool("fit_trap_curve",
-                   "Fit a digitized 2-column CSV to trap energies. TSC: (T [K], current) curve, deconvolved into "
-                   "first-order peaks (N by BIC) -> Ea, Tm, s per peak. DLTS/I-DLTS/PICTS: Arrhenius pairs "
-                   "(T or Tm, emission rate / rate window) -> Ea, sigma. Feed Ea into match_trap.",
+                   "Fit a digitized 2-column CSV to trap energies via trapfit (Kitis-model glow-peak fitting). "
+                   "TSC: (T [K], current) curve, simultaneously deconvolved into N peaks (N by BIC) -> "
+                   "energy_eV, peak_T_K, frequency_factor_per_s per peak. DLTS/I-DLTS/PICTS: Arrhenius pairs "
+                   "(T or Tm, emission rate / rate window) -> energy_eV, apparent_cross_section_cm2. "
+                   "LAPLACE_DLTS: one isothermal (time_s, signal) transient -> emission-rate components. "
+                   "Returns status ok/unresolved/refused; never forces a label. Feed energy_eV into match_trap.",
                    {"csv_path": {"type": "string"},
-                    "technique": {"type": "string", "enum": ["TSC", "DLTS", "I-DLTS", "PICTS"]},
+                    "technique": {"type": "string", "enum": ["TSC", "DLTS", "I-DLTS", "PICTS", "LAPLACE_DLTS"]},
                     "heating_rate_K_per_s": {"type": "number"}, "max_peaks": {"type": "integer"},
                     "m_eff": {"type": "number", "description": "m*/m0, for capture cross-section"},
                     "x_kind": {"type": "string", "enum": ["T", "1000/T", "1/T"]},
@@ -100,3 +103,19 @@ class Toolbox:
                            max_peaks: int = 4, m_eff: float | None = None, x_kind: str = "T",
                            y_kind: str = "rate"):
             return peaks.fit_curve(csv_path, technique, heating_rate_K_per_s, max_peaks, m_eff, x_kind, y_kind)
+
+        @self.tool("verify_defect_formation",
+                   "Computationally verify a candidate defect by relaxing its structure with MACE-MH-1 "
+                   "and reporting the defect-formation energy (defect minus bulk, eV). Only a fixed set "
+                   "of (material, defect_label) pairs are configured for screening (see dft_screen/materials.json); "
+                   "report this as supporting evidence alongside match_trap's posterior, not blended into it. "
+                   "Returns status mace_unavailable if the optional 'dft' extra (mace-torch) isn't installed.",
+                   {"material": {"type": "string"}, "defect_label": {"type": "string"}},
+                   ["material", "defect_label"])
+        def verify_defect_formation(material: str, defect_label: str):
+            try:
+                from .dft_screen import screen as dft_screen
+            except ImportError as e:
+                return {"status": "mace_unavailable",
+                        "reason": f"{e} -- install the 'dft' extra (uv sync --extra dft) to run this verification"}
+            return dft_screen.verify(material, defect_label)

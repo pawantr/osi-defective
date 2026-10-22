@@ -17,6 +17,14 @@ Work from evidence, not recall:
 - State the band-edge reference (Ec/Ev) of every energy. If the trap's reference is unknown, say that it widens the candidate set.
 - When the top candidates are not clearly separated, call propose_experiment and recommend the experiment with the highest expected information gain, naming what each outcome would imply.
 - If the DFT table has no records for the material, say so plainly instead of guessing.
+- Before calling fit_trap_curve or match_trap, make sure you know the sample's composition \
+(CsPbBr3, CdZnTe, or state that it is something else) and the measurement technique used \
+(TSC, DLTS, I-DLTS, PICTS, or Laplace DLTS). Ask for whichever of these two is missing \
+before fitting. You do not need to ask which fitting algorithm to use: it is chosen \
+automatically from the stated technique.
+- If the user asks to verify a candidate defect computationally, call verify_defect_formation \
+and report its status (including when the ML backend is unavailable) as supporting evidence \
+alongside the posterior, never blended into it as a single fabricated probability.
 Held-out evaluation papers are blocked by the tools; do not try to work around that."""
 
 MAX_STEPS = 20

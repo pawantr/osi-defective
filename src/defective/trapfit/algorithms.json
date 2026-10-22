@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0",
+  "description": "Routing table for the DEFECTIVE agent. Maps a measurement technique to a fitting algorithm, its required inputs, outputs, quality flags and refusal rules. The agent reads this file, picks the route by technique, checks required inputs, and calls the named Python function.",
+  "units": {"temperature": "K", "energy": "eV", "current": "A", "capacitance": "F", "time": "s", "emission_rate": "1/s", "cross_section": "cm^2"},
+  "global_policy": {
+    "if_technique_unknown": "refuse_and_ask",
+    "if_required_input_missing": "refuse_and_list_missing",
+    "if_fit_fails_or_unresolved": "return_status_unresolved_do_not_force_label",
+    "never_use_default_for": ["technique", "temperature_axis", "rate_windows"],
+    "output_tag": "fitted",
+    "excluded_techniques": ["TCT"]
+  },
+  "quality_thresholds": {
+    "energy_sigma_abs_eV": 0.10,
+    "energy_sigma_rel": 0.30,
+    "min_peak_separation_K": 8.0,
+    "weak_peak_fraction_of_max": 0.05,
+    "min_rate_windows_arrhenius": 3
+  },
+  "techniques": {
+    "TSC": {
+      "aliases": ["TSC", "thermally stimulated current", "thermally-stimulated current"],
+      "route": "simultaneous_multi_peak_fit",
+      "function": "trapfit.tsc.fit_tsc",
+      "algorithm": {
+        "name": "Simultaneous multi-peak fit (SIMPA-style)",
+        "peak_model_default": "first_order_kitis",
+        "peak_model_options": ["first_order_kitis", "general_order_kitis"],
+        "objective": "least squares on log10(current), all peaks fitted together",
+        "optimizer": "scipy.optimize.least_squares (trf, bounded) with multi-start",
+        "peak_count_selection": "greedy peak addition at largest residual; keep count with lowest BIC",
+        "uncertainty": "covariance from Jacobian, scaled by residual variance"
+      },
+      "required_inputs": {
+        "data.temperature_K": "1-D array, increasing",
+        "data.current_A": "1-D array, same length"
+      },
+      "recommended_inputs": {
+        "data.dark_current_A": "dark current to subtract, same length or scalar",
+        "metadata.heating_rate_K_per_s": "needed for frequency factor; energy is still fitted without it, frequency factor is omitted and flagged"
+      },
+      "options": {"max_peaks": 16, "peak_model": "first_order_kitis", "criterion": "bic", "n_starts": 6, "floor_fraction": 1e-5},
+      "outputs": ["peak_T_K", "peak_height_A", "energy_eV", "energy_sigma_eV", "frequency_factor_per_s", "order_b", "flags"],
+      "fallback": {"on_failure": "unresolved", "try_general_order_if_first_order_residual_structured": true},
+      "notes": "Peak overlap makes the decomposition non-unique. Report n_peaks, BIC and per-peak sigma so the matcher can down-weight weak or overlapped peaks."
+    },
+    "DLTS": {
+      "aliases": ["DLTS", "deep level transient spectroscopy", "capacitance DLTS"],
+      "route": "rate_window_peak_tracking_then_arrhenius",
+      "function": "trapfit.arrhenius.analyze_dlts",
+      "algorithm": {
+        "name": "Peak per rate window, link across windows, Arrhenius regression",
+        "peak_finding": "scipy.signal.find_peaks on smoothed spectrum, local Gaussian refinement",
+        "linking": "nearest peak to higher temperature with rate, within max_shift_K",
+        "regression": "weighted linear fit of ln(e/T^2) vs 1/(kT)",
+        "uncertainty": "covariance of the regression"
+      },
+      "required_inputs": {
+        "data.spectra": "list of {temperature_K, signal, t1_s, t2_s} or {temperature_K, signal, emission_rate_per_s}, at least 3 windows"
+      },
+      "recommended_inputs": {"metadata.effective_mass_ratio": "for apparent capture cross-section; default 1.0"},
+      "options": {"max_shift_K": 30.0, "smooth_window": 7, "min_prominence_fraction": 0.1, "peak_sign": "positive"},
+      "alternative_input": {"data.arrhenius_points": "list of {peak_T_K, emission_rate_per_s} already extracted from a paper"},
+      "outputs": ["energy_eV", "energy_sigma_eV", "apparent_cross_section_cm2", "n_windows", "flags"],
+      "fallback": {"on_fewer_than_3_windows": "refuse", "on_unlinked_peaks": "unresolved"},
+      "notes": "Energy does not depend on a peak-shape model. Use laplace_dlts when raw transients are available and emission rates are closely spaced."
+    },
+    "I-DLTS": {
+      "aliases": ["I-DLTS", "IDLTS", "current DLTS", "current-mode DLTS"],
+      "route": "rate_window_peak_tracking_then_arrhenius",
+      "function": "trapfit.arrhenius.analyze_dlts",
+      "algorithm": {"name": "Same as DLTS; signal is current transient amplitude"},
+      "required_inputs": {"data.spectra": "list of {temperature_K, signal, t1_s, t2_s} or emission_rate_per_s, at least 3 windows"},
+      "options": {"max_shift_K": 30.0, "smooth_window": 7, "min_prominence_fraction": 0.1, "peak_sign": "positive"},
+      "alternative_input": {"data.arrhenius_points": "list of {peak_T_K, emission_rate_per_s}"},
+      "outputs": ["energy_eV", "energy_sigma_eV", "apparent_cross_section_cm2", "n_windows", "flags"],
+      "fallback": {"on_fewer_than_3_windows": "refuse"},
+      "notes": "Preferred for high-resistivity detector crystals where capacitance DLTS is not possible."
+    },
+    "PICTS": {
+      "aliases": ["PICTS", "photo-induced current transient spectroscopy", "photoinduced current transient spectroscopy"],
+      "route": "rate_window_peak_tracking_then_arrhenius",
+      "function": "trapfit.arrhenius.analyze_dlts",
+      "algorithm": {"name": "Same as DLTS; photo-excited current transients, correlator or two-gate windows"},
+      "required_inputs": {"data.spectra": "list of {temperature_K, signal, t1_s, t2_s} or emission_rate_per_s, at least 3 windows"},
+      "options": {"max_shift_K": 30.0, "smooth_window": 7, "min_prominence_fraction": 0.1, "peak_sign": "positive"},
+      "alternative_input": {"data.arrhenius_points": "list of {peak_T_K, emission_rate_per_s}"},
+      "outputs": ["energy_eV", "energy_sigma_eV", "apparent_cross_section_cm2", "n_windows", "flags"],
+      "fallback": {"on_fewer_than_3_windows": "refuse"},
+      "notes": "Ionic migration in halide perovskites can mimic traps in PICTS. Set flags.ionic_artifact_possible for CsPbBr3 and let the matcher decide."
+    },
+    "LAPLACE_DLTS": {
+      "aliases": ["Laplace DLTS", "LDLTS", "laplace"],
+      "route": "inverse_laplace_transient",
+      "function": "trapfit.laplace.laplace_transient",
+      "algorithm": {"name": "Tikhonov-regularized non-negative least squares inverse Laplace transform", "note": "Approximate. Use CONTIN or FTIKREG for production work."},
+      "required_inputs": {"data.time_s": "1-D array", "data.signal": "1-D array, one isothermal transient"},
+      "options": {"n_rates": 120, "alpha": 0.01},
+      "outputs": ["emission_rate_per_s", "relative_amplitude", "flags"],
+      "fallback": {"on_failure": "unresolved"},
+      "notes": "Run at several temperatures, then pass the resulting (T, emission rate) points to analyze_dlts as arrhenius_points."
+    }
+  }
+}

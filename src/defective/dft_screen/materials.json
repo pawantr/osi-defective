@@ -1,0 +1,26 @@
+{
+  "calculation_scope": "Neutral single-defect MACE-MH-1 prescreening inputs",
+  "materials": [
+    {
+      "name": "CsPbBr3",
+      "source": "CsPbBr3-monoclinic.cif",
+      "supercell": [1, 1, 1],
+      "pre_substitutions": [],
+      "defects": [
+        {"type": "vacancy", "element": "Br", "site_index": 0, "charge": 0, "label": "VBr"}
+      ]
+    },
+    {
+      "name": "CdZnTe",
+      "source": "Cd0.9Zn0.1Te.cif",
+      "supercell": [2, 2, 2],
+      "bulk_label": "Cd29Zn3Te32",
+      "pre_substitutions": [
+        {"from_element": "Cd", "to_element": "Zn", "count": 3, "label": "alloy_Zn_on_Cd"}
+      ],
+      "defects": [
+        {"type": "vacancy", "element": "Te", "site_index": 0, "charge": 0, "label": "VTe"}
+      ]
+    }
+  ]
+}

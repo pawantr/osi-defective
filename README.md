@@ -72,12 +72,15 @@ cp .env.example .env        # add your key(s) and the corpus path
 uv run pytest               # offline tests, no LLM calls
 ```
 
-Set `DEFECTIVE_CORPUS_DIR` to the Docling output folder
-(`Hackathon_202610_ANL/docling_pdf/output` on Box). If Box Drive is slow, copy it locally:
-`rsync -a --include='*/' --include='*.md' --exclude='*' <box>/output/ corpus/`
-(`corpus/` is gitignored). The held-out titles are also listed in `configs/corpus.yaml`, so the
-guard holds even when `Test Data/` is missing from a copy. Papers are copyrighted, so they
-stay on Box and are not committed.
+Set `DEFECTIVE_CORPUS_DIR` to a folder holding `Experimental Data/*.md`, `DFT Papers/*.md`
+and `Test Data/*.md` — Docling (or any other PDF/DOCX-to-markdown converter) output, kept
+one directory per split exactly like the corresponding folder of source documents. **This
+repo does not convert PDFs to markdown yet** — that conversion is a manual pre-step for
+now; run your own Docling pass over `Experimental Data/`, `DFT Papers/` and `Test Data/`
+and point `DEFECTIVE_CORPUS_DIR` at the resulting output (`corpus/` inside this repo is
+gitignored and a convenient place to put it). The held-out titles are also listed in
+`configs/corpus.yaml`, so the guard holds even when `Test Data/` is missing from a copy.
+Papers are copyrighted, so they stay on Box and are not committed.
 
 ## Usage
 
