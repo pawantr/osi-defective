@@ -39,7 +39,7 @@ Docling markdown (Box) ──► Corpus (BM25 search, held-out guard)
                               │
           extract (LLM) ──────┤──► data/extracted/traps.<provider>.jsonl
                               │
-DFT levels (seed) ────────────┤──► data/extracted/dft_levels.jsonl
+DFT papers ─ extract-dft (LLM)┤──► data/extracted/dft_levels{,.llm}.jsonl
                               ▼
                  Agent (single tool-use loop, any LLM backend)
    list_papers · search_papers · read_passage · query_dft_levels
@@ -71,7 +71,7 @@ What works, and what does not yet:
 |---|---|
 | Agent, tools, held-out guard, multi-provider backends | working; offline tests pass in CI |
 | Corpus | 25 DFT, 35 dev and 6 held-out papers as Docling markdown (local only, copyrighted) |
-| DFT table (`data/extracted/dft_levels.jsonl`) | **7 seed levels** (CsPbBr3, CdZnTe, CdTe), quoted from experimental papers. Method metadata (functional, SOC, corrections) is still empty, so the harmonization step is not exercised yet. The harmonized table from the DFT papers is pending. |
+| DFT table | **7 hand-checked seed levels** (`dft_levels.jsonl`, quoted in experimental papers) plus **57 LLM-extracted levels from 13 of the 25 DFT papers** (`dft_levels.llm.jsonl`, `defective extract-dft`). Every extracted level is quote-verified against its paper, carries its method (functional, SOC, correction, gap) and is tagged `llm_extracted_unreviewed`. Coverage: mostly CdTe/CdTeSe/ZnTe (49), CsPbBr3 (3), none for CdZnTe itself. Rejected candidates are in `dft_levels.llm.rejected.jsonl`. Not yet reviewed by a DFT expert; uncertainty widths are still the 0.15 eV default. |
 | Matcher and experiment design | working, on the seed table above. Its posteriors are only as good as that table. |
 | Curve fitting (trapfit) | working; benchmarked on one published TSC fit (see [Benchmarks](#benchmarks)) |
 | MACE formation-energy check | working on Python < 3.15 (needs torch) |
@@ -116,6 +116,7 @@ uv run defective corpus                         # split sizes + held-out guard r
 uv run defective ask "Which defect explains the 0.79 eV trap in CdZnTe?"
 uv run defective chat                           # interactive session
 uv run defective extract --split dev --limit 3  # LLM-extract trap records
+uv run defective extract-dft                    # LLM-extract DFT levels (quote-verified)
 uv run defective ui                             # Gradio demo (http://127.0.0.1:7860)
 uv run defective eval                           # four-condition evaluation on held-out gold traps
 ```

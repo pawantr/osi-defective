@@ -1,4 +1,4 @@
-"""Seed DFT table: every quote is verbatim in its cited paragraph (skipped without the local corpus)."""
+"""DFT tables (seed + LLM-extracted): every quote is verbatim in its cited paragraph (skipped without the local corpus)."""
 import importlib.util
 import os
 from pathlib import Path

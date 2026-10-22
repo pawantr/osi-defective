@@ -74,7 +74,7 @@ def test_design_prefers_splitting_experiment():
     assert ranked[0]["discriminates_on"] == "character"
 
 
-def test_seed_dft_table_matches_schema():
+def test_dft_tables_match_schema():
     schema = json.loads((CFG.parents[1] / "schemas/dft_level.schema.json").read_text())
     for rec in matcher.dft_levels():
         assert set(schema["required"]) <= rec.keys(), rec["record_id"]

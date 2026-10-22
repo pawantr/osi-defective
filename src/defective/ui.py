@@ -15,7 +15,7 @@ from .providers import load_model_config
 
 PROVIDERS = ["anthropic", "openai", "gemini", "argo"]
 MATERIALS = ["CsPbBr3", "CdZnTe", "CdTe"]
-CAND_COLS = ["rank", "defect", "transition", "level_eV", "reference", "delta_eV", "sigma_eV", "posterior", "source"]
+CAND_COLS = ["rank", "defect", "transition", "level_eV", "reference", "delta_eV", "sigma_eV", "posterior", "source", "provenance"]
 PEAK_COLS = ["peak", "energy_eV", "energy_sigma_eV", "peak_T_K", "frequency_factor_per_s",
              "apparent_cross_section_cm2", "order_b", "flags"]
 EXAMPLE_CURVE = os.path.join(os.path.dirname(__file__), "..", "..", "data", "examples", "tsc_synthetic_two_peaks.csv")

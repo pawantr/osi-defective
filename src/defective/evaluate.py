@@ -35,7 +35,7 @@ from . import matcher
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_GOLD = REPO / "data/eval/heldout_traps.jsonl"
-DEFAULT_DFT = REPO / "data/extracted/dft_levels.jsonl"
+DEFAULT_DFT = None   # None: every table in matcher.DFT_TABLES
 RUNS = REPO / "runs/eval"
 
 CONDITIONS = {
@@ -423,9 +423,9 @@ def plot_summary(summary_csv: Path) -> list[Path]:
 
 
 def main(gold_path: Path = DEFAULT_GOLD, conditions: list[str] | None = None,
-         provider: str | None = None, model: str | None = None, dft_path: Path = DEFAULT_DFT,
+         provider: str | None = None, model: str | None = None, dft_path: Path | None = DEFAULT_DFT,
          out_dir: Path | None = None, limit: int | None = None, plot: bool = True) -> Path:
-    gold_path, dft_path = Path(gold_path), Path(dft_path)
+    gold_path, dft_path = Path(gold_path), (Path(dft_path) if dft_path else None)
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold file not found: {gold_path} (JSONL of trap records per "
                                 "schemas/trap.schema.json, with assignment.basis filled in)")
@@ -439,7 +439,7 @@ def main(gold_path: Path = DEFAULT_GOLD, conditions: list[str] | None = None,
         make_llm = lambda system: make_provider(provider, system, [], model)  # noqa: E731
     result = evaluate(gold, conditions, lambda m: matcher.dft_levels(m, dft_path), make_llm)
     out_dir = Path(out_dir or RUNS / datetime.now().strftime("%Y%m%d-%H%M%S"))
-    write_run(result, out_dir, {"gold": str(gold_path), "dft_levels": str(dft_path),
+    write_run(result, out_dir, {"gold": str(gold_path), "dft_levels": str(dft_path or [str(t) for t in matcher.DFT_TABLES]),
                                 "conditions": conditions, "llm": llm_id, "limit": limit,
                                 "created": datetime.now().isoformat(timespec="seconds")})
     print(format_summary(result))

@@ -1,4 +1,4 @@
-"""Check every DFT seed record's quote appears verbatim (whitespace-normalized) in its cited paragraph.
+"""Check every DFT record's quote (seed and LLM-extracted) appears verbatim (whitespace-normalized) in its cited paragraph.
 
 Run:  uv run python scripts/verify_seed_quotes.py   (needs DEFECTIVE_CORPUS_DIR)
 """

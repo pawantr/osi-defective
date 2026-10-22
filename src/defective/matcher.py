@@ -33,8 +33,12 @@ def load_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def dft_levels(material: str | None = None, path: Path = DATA / "dft_levels.jsonl") -> list[dict]:
-    recs = load_jsonl(path)
+# Hand-checked seed levels, then LLM-extracted levels from the DFT papers (quote-verified, unreviewed).
+DFT_TABLES = (DATA / "dft_levels.jsonl", DATA / "dft_levels.llm.jsonl")
+
+
+def dft_levels(material: str | None = None, path: Path | None = None) -> list[dict]:
+    recs = load_jsonl(path) if path else [r for t in DFT_TABLES for r in load_jsonl(t)]
     if material:
         m = material.lower().replace(" ", "")
         recs = [r for r in recs if r["material"].lower().replace(" ", "") == m]
@@ -71,7 +75,8 @@ def match(trap: dict, levels: list[dict]) -> dict:
         cands.append({"record_id": rec["record_id"], "defect": rec["defect"],
                       "transition": rec["transition"], "level_eV": round(lv, 3), "reference": r,
                       "delta_eV": round(e - lv, 3), "sigma_eV": round(sigma, 3), "_ll": ll,
-                      "source": rec.get("source", {}).get("doc_id")})
+                      "source": rec.get("source", {}).get("doc_id"),
+                      "provenance": rec.get("provenance")})
     if cands:
         top = max(c["_ll"] for c in cands)
         z = sum(math.exp(c["_ll"] - top) for c in cands)

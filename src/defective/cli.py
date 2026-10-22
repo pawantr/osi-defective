@@ -18,6 +18,9 @@ def main():
     x = sub.add_parser("extract", help="LLM-extract trap records from a corpus split")
     x.add_argument("--split", default="dev", choices=["dev", "dft"])
     x.add_argument("--limit", type=int)
+    xd = sub.add_parser("extract-dft", help="LLM-extract DFT transition levels from the DFT papers")
+    xd.add_argument("--limit", type=int)
+    xd.add_argument("--workers", type=int, default=4)
     q = sub.add_parser("ask", help="One question to the agent")
     q.add_argument("question")
     u = sub.add_parser("ui", help="Launch the Gradio demo (needs the `ui` extra)")
@@ -27,7 +30,7 @@ def main():
     ev.add_argument("--conditions", nargs="+", choices=list(CONDITIONS), default=list(CONDITIONS),
                     help="subset to run (default: all four)")
     ev.add_argument("--gold", default=str(DEFAULT_GOLD), help="JSONL of gold trap records")
-    ev.add_argument("--dft", default=str(DEFAULT_DFT), help="JSONL of DFT level records")
+    ev.add_argument("--dft", default=DEFAULT_DFT, help="JSONL of DFT level records (default: all tables)")
     ev.add_argument("--out", help="output dir (default runs/eval/<timestamp>)")
     ev.add_argument("--limit", type=int, help="score only the first N gold records")
     ev.add_argument("--no-plot", action="store_true", help="skip the metrics figure")
@@ -64,6 +67,11 @@ def main():
     if args.cmd == "extract":
         from .extract import extract
         print(extract(args.split, args.provider, args.model, args.limit))
+        return
+
+    if args.cmd == "extract-dft":
+        from .extract_dft import extract_dft
+        print(extract_dft(args.provider, args.model, args.limit, args.workers))
         return
 
     from .agent import Agent
