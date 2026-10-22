@@ -78,3 +78,11 @@ def test_seed_dft_table_matches_schema():
     schema = json.loads((CFG.parents[1] / "schemas/dft_level.schema.json").read_text())
     for rec in matcher.dft_levels():
         assert set(schema["required"]) <= rec.keys(), rec["record_id"]
+
+
+def test_guard_holds_without_test_data(tmp_path):
+    (tmp_path / "Experimental Data").mkdir()
+    (tmp_path / "Experimental Data/Identification of deep trap levels from.md").write_text("# P\n\nEL2 0.99 eV")
+    c = Corpus.load(tmp_path, CFG)
+    assert c.leaked_duplicates() == ["Experimental Data/Identification of deep trap levels from.md"]
+    assert c.visible() == []

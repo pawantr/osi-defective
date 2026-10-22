@@ -68,6 +68,7 @@ class Corpus:
                 corpus.papers[rel] = Paper(rel, split, md)
         if cfg.get("heldout_guard", True):
             heldout = {normalize_title(Path(d).stem) for d, p in corpus.papers.items() if p.split == "heldout"}
+            heldout |= {normalize_title(t) for t in cfg.get("heldout_titles", [])}
             corpus.blocked = {d for d in corpus.papers if normalize_title(Path(d).stem) in heldout}
         return corpus
 

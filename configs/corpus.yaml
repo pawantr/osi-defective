@@ -13,3 +13,12 @@ splits:
 # under another split (e.g. the Pavlovic 2008 TSC paper is in both
 # Experimental Data/ and Test Data/). Matching is on the normalized title stem.
 heldout_guard: true
+
+# Held-out title stems (Docling file names in Test Data/). Blocked even when
+# Test Data/ is absent from a local corpus copy, so the guard never fails open.
+heldout_titles:
+  - Defect Levels in Nuclear Detector Grade
+  - Determination of Defect Levels in Melt-Grown
+  - Identification of deep trap levels from
+  - Investigation of defects in melt and
+  - New Insight into the 1.1-eV Trap

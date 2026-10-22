@@ -33,8 +33,7 @@ Rules: copy numbers exactly as printed; "quote" must be verbatim text from the p
 "basis" is "independent" only if THIS paper's own doping/stoichiometry/anneal data supports the assignment.
 Skip levels from other papers that are merely cited. If none, return [].
 
-PAPER (doc_id: {doc_id}):
-{text}"""
+PAPER (doc_id: """
 
 
 def _json_array(text: str) -> list[dict]:
@@ -54,7 +53,7 @@ def extract(split: str = "dev", provider: str | None = None, model: str | None =
             llm = make_provider(provider, "You extract structured data from scientific papers.", [], model)
             text = "\n\n".join(paper.paragraphs)
             try:
-                recs = _json_array(llm.send_user(PROMPT.format(doc_id=paper.doc_id, text=text)).text)
+                recs = _json_array(llm.send_user(PROMPT + f"{paper.doc_id}):\n{text}").text)
             except json.JSONDecodeError as e:
                 print(f"  ! {paper.doc_id}: unparseable output ({e})")
                 continue

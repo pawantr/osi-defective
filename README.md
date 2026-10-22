@@ -73,7 +73,10 @@ uv run pytest               # offline tests, no LLM calls
 ```
 
 Set `DEFECTIVE_CORPUS_DIR` to the Docling output folder
-(`Hackathon_202610_ANL/docling_pdf/output` on Box). Papers are copyrighted, so they
+(`Hackathon_202610_ANL/docling_pdf/output` on Box). If Box Drive is slow, copy it locally:
+`rsync -a --include='*/' --include='*.md' --exclude='*' <box>/output/ corpus/`
+(`corpus/` is gitignored). The held-out titles are also listed in `configs/corpus.yaml`, so the
+guard holds even when `Test Data/` is missing from a copy. Papers are copyrighted, so they
 stay on Box and are not committed.
 
 ## Usage
@@ -83,7 +86,41 @@ uv run defective corpus                         # split sizes + held-out guard r
 uv run defective ask "Which defect explains the 0.79 eV trap in CdZnTe?"
 uv run defective chat                           # interactive session
 uv run defective extract --split dev --limit 3  # LLM-extract trap records
+uv run defective ui                             # Gradio demo (http://127.0.0.1:7860)
+uv run defective eval                           # four-condition evaluation on held-out gold traps
 ```
+
+### Demo UI
+
+- **Agent:** chat, with a live trace of every tool call (search → read → match → propose experiment).
+  Provider and model can be switched from dropdowns.
+- **Match a trap:** the probabilistic matcher over the DFT table, with no LLM. It returns ranked
+  candidates and the experiments that best separate them.
+- **Fit a curve:** upload a digitized TSC curve to deconvolve it into first-order peaks, or upload
+  DLTS/PICTS Arrhenius points. Pick a peak and send its energy to the matcher.
+  `data/examples/tsc_synthetic_two_peaks.csv` is a **synthetic** two-peak example, written by
+  `scripts/make_example_curves.py`.
+
+### Evaluation
+
+`defective eval --gold data/eval/heldout_traps.jsonl` scores nearest-energy, LLM-alone,
+LLM + DFT table, and the matcher.
+
+- **Scored records:** only those with `assignment.basis == "independent"`. The rest are listed
+  in `excluded.csv` with the reason.
+- **Metrics:** top-1, top-3 and MRR for every condition. The matcher is also scored on the mean
+  gold-defect posterior and the Brier score.
+- **Output:** written to `runs/eval/<timestamp>/`, including an editable `metrics.{pdf,png,svg}`.
+
+### Curve fitting (`src/defective/peaks.py`)
+
+- **TSC:** a sum of first-order (Randall–Wilkins) peaks, with the number of peaks chosen by BIC.
+  Initial-rise and Chen peak-shape estimates serve as fallbacks.
+- **DLTS/PICTS:** an Arrhenius fit of ln(e/T²) against 1/T gives Ea and the apparent σ.
+  m*/m0 is a parameter.
+- **Agent tool:** the same fits are exposed as `fit_trap_curve`.
+- **Caveats:** first-order kinetics, no retrapping. Errors are statistical only.
+  Convert log-scale digitized currents to linear before fitting.
 
 ## LLM backends
 
@@ -113,7 +150,12 @@ src/defective/
   tools.py      tool definitions exposed to the agent
   agent.py      tool-use loop and system prompt
   extract.py    LLM extraction of trap records with quote verification
+  peaks.py      TSC deconvolution, DLTS/PICTS Arrhenius fits
+  evaluate.py   four-condition evaluation
+  ui.py         Gradio demo
   cli.py        `defective` command
+scripts/        example-data generator, seed-quote verifier
+data/examples/  synthetic demo curves
 data/extracted/ extracted records (JSONL)
 tests/          offline tests
 ```

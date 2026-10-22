@@ -39,3 +39,9 @@ def test_missing_key_is_reported(monkeypatch, tmp_path):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     agent, msg = ui.build_agent("openai", "fast")
     assert agent is None and "OPENAI_API_KEY" in msg
+
+
+def test_fit_tab_recovers_example_peaks():
+    from defective.ui import EXAMPLE_CURVE, fit_table
+    msg, df, fig, ea = fit_table(EXAMPLE_CURVE, "TSC", 0.1, "T", "rate")
+    assert len(df) == 2 and abs(ea - 0.35) < 0.02, msg
